@@ -1,0 +1,1463 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#08080b">
+<title>Trading Edge — MT5 intelligence</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%237c6cff'/%3E%3Cpath d='M8 21l5-6 4 3 7-9' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#08080b;--bg-2:#0b0b10;
+  --card:rgba(18,18,26,.68);--panel-2:#15151e;--panel-solid:#101017;
+  --sidebar:rgba(10,10,15,.76);--topbar:rgba(8,8,11,.72);
+  --border:rgba(255,255,255,.085);--border-strong:rgba(255,255,255,.16);
+  --text:#f4f4f5;--muted:#a1a1aa;--faint:#71717a;
+  --primary:#8b7cff;--primary-2:#22d3ee;--primary-soft:rgba(124,108,255,.14);--primary-border:rgba(124,108,255,.28);
+  --up:#34d399;--up-soft:rgba(52,211,153,.12);--up-border:rgba(52,211,153,.24);
+  --down:#fb7185;--down-soft:rgba(251,113,133,.12);--down-border:rgba(251,113,133,.24);
+  --warn:#fbbf24;--warn-soft:rgba(251,191,36,.12);--warn-border:rgba(251,191,36,.22);
+  --grid-line:rgba(255,255,255,.035);--chart-grid:rgba(255,255,255,.06);
+  --glow-1:rgba(124,108,255,.17);--glow-2:rgba(34,211,238,.09);--glow-3:rgba(52,211,153,.06);
+  --shadow:0 30px 60px -30px rgba(0,0,0,.8);
+  --display:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --sans:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+[data-theme="light"]{
+  --bg:#f6f6f8;--bg-2:#eef0f4;
+  --card:rgba(255,255,255,.86);--panel-2:#f3f3f6;--panel-solid:#ffffff;
+  --sidebar:rgba(255,255,255,.82);--topbar:rgba(246,246,248,.78);
+  --border:rgba(9,9,11,.08);--border-strong:rgba(9,9,11,.16);
+  --text:#09090b;--muted:#52525b;--faint:#71717a;
+  --primary:#5b4bff;--primary-2:#0891b2;--primary-soft:rgba(91,75,255,.09);--primary-border:rgba(91,75,255,.22);
+  --up:#059669;--up-soft:rgba(5,150,105,.09);--up-border:rgba(5,150,105,.2);
+  --down:#e11d48;--down-soft:rgba(225,29,72,.08);--down-border:rgba(225,29,72,.18);
+  --warn:#b45309;--warn-soft:rgba(180,83,9,.09);--warn-border:rgba(180,83,9,.18);
+  --grid-line:rgba(9,9,11,.035);--chart-grid:rgba(9,9,11,.06);
+  --glow-1:rgba(91,75,255,.1);--glow-2:rgba(8,145,178,.07);--glow-3:rgba(5,150,105,.05);
+  --shadow:0 30px 60px -34px rgba(15,23,42,.35);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{
+  margin:0;min-height:100vh;color:var(--text);font-family:var(--sans);font-size:14px;
+  background:
+    radial-gradient(900px 520px at 4% -6%,var(--glow-1),transparent 60%),
+    radial-gradient(820px 540px at 102% -2%,var(--glow-2),transparent 58%),
+    radial-gradient(700px 520px at 52% 110%,var(--glow-3),transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg-2));
+  background-attachment:fixed;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:52px 52px;opacity:.55;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 72%);
+  mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 72%);
+}
+button,input{font-family:inherit}
+::selection{background:var(--primary-soft);color:var(--text)}
+a{color:inherit}
+svg{display:block}
+.app{position:relative;z-index:1;min-height:100vh}
+
+/* sidebar */
+.sidebar{
+  position:fixed;inset:0 auto 0 0;width:252px;z-index:50;display:flex;flex-direction:column;gap:24px;
+  padding:22px 16px 18px;background:var(--sidebar);border-right:1px solid var(--border);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 6px 0}
+.logo-mark{
+  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;color:#fff;
+  background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 10px 24px -8px rgba(124,108,255,.7),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.logo-mark svg{width:19px;height:19px}
+.brand-name{display:block;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:-.02em}
+.brand-sub{display:block;margin-top:2px;font-size:10px;color:var(--faint);letter-spacing:.03em}
+.side-nav{display:flex;flex-direction:column;gap:3px}
+.nav-item{
+  position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;
+  color:var(--muted);font-size:12.5px;font-weight:500;text-decoration:none;transition:color .18s,background .18s;
+}
+.nav-item svg{width:16px;height:16px;flex:none;opacity:.9}
+.nav-item:hover{color:var(--text);background:var(--panel-2)}
+.nav-item.is-active{color:var(--text);background:var(--primary-soft)}
+.nav-item.is-active svg{color:var(--primary);opacity:1}
+.nav-item.is-active::before{
+  content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:99px;
+  background:linear-gradient(180deg,var(--primary),var(--primary-2));
+}
+.account-card{margin-top:auto;padding:13px;border:1px solid var(--border);border-radius:16px;background:var(--panel-2)}
+.account-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.eyebrow{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.eyebrow svg{width:13px;height:13px;color:var(--primary)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.account-id{display:flex;align-items:center;gap:9px;min-width:0}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
+  font-size:10.5px;font-weight:700;color:#fff;letter-spacing:.02em;
+  background:linear-gradient(135deg,var(--primary),var(--primary-2));box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+}
+.account-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-meta{font-size:10.5px;color:var(--faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-placeholder{font-size:11.5px;color:var(--faint);line-height:1.5}
+.account-card .btn{margin-top:11px;width:100%;justify-content:center}
+.side-foot{display:flex;align-items:center;gap:6px;padding:0 6px;font-size:10px;color:var(--faint)}
+.side-foot svg{width:12px;height:12px}
+.backdrop{display:none;position:fixed;inset:0;z-index:45;background:rgba(4,4,8,.66);backdrop-filter:blur(6px)}
+.backdrop.show{display:block}
+
+/* topbar */
+.canvas{margin-left:252px;min-height:100vh}
+.topbar{
+  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;min-height:64px;
+  padding:11px clamp(18px,3vw,34px);background:var(--topbar);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.menu-btn{display:none}
+.mobile-brand{display:none}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--faint);white-space:nowrap}
+.crumbs strong{font-weight:600;color:var(--text)}
+.crumb-sep{opacity:.5}
+.top-actions{display:flex;align-items:center;gap:9px;margin-left:auto;min-width:0}
+.segmented{
+  display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--border);border-radius:12px;
+  background:var(--panel-2);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+}
+.segmented::-webkit-scrollbar{display:none}
+.segmented button{
+  appearance:none;border:0;background:none;color:var(--muted);cursor:pointer;white-space:nowrap;
+  font-size:11.5px;font-weight:600;padding:7px 10px;border-radius:9px;transition:color .16s,background .16s,box-shadow .16s;
+}
+.segmented button:hover{color:var(--text)}
+.segmented button.is-on{color:var(--text);background:var(--panel-solid);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.icon-btn{
+  width:37px;height:37px;flex:none;display:grid;place-items:center;cursor:pointer;color:var(--muted);
+  border:1px solid var(--border);background:var(--panel-2);border-radius:10px;transition:color .18s,border-color .18s,background .18s;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--border-strong);background:var(--panel-solid)}
+.icon-btn svg{width:16px;height:16px}
+.top-avatar{width:35px;height:35px;border:1px solid var(--border-strong)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;border-radius:10px;
+  padding:8px 13px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:transform .18s,filter .18s,border-color .18s,background .18s,opacity .18s;
+}
+.btn svg{width:14px;height:14px}
+.btn-primary{
+  color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 12px 26px -12px rgba(124,108,255,.85),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.62;cursor:progress;transform:none;filter:none}
+.btn-ghost{color:var(--text);border-color:var(--border);background:var(--panel-2)}
+.btn-ghost:hover{border-color:var(--border-strong);background:var(--panel-solid)}
+.btn-sm{padding:7px 10px;font-size:11px;border-radius:9px}
+
+/* page frame */
+.page{max-width:1460px;margin:0 auto;padding:0 clamp(18px,3vw,34px) 96px}
+.subbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 1px;border-bottom:1px solid var(--border)}
+.status{display:flex;align-items:center;gap:8px;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.status::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.status.is-err::before{background:var(--down);box-shadow:0 0 0 4px var(--down-soft)}
+.subbar-actions{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.subbar-note{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--faint)}
+.subbar-note svg{width:11px;height:11px}
+.link-btn{appearance:none;border:0;background:none;padding:0;cursor:pointer;color:var(--muted);font-size:11.5px;font-weight:600;border-bottom:1px solid var(--border-strong);transition:color .18s,border-color .18s}
+.link-btn:hover{color:var(--text);border-bottom-color:var(--primary)}
+.range-panel{margin-top:14px}
+.range-inner{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--panel-2)}
+.range-apply{align-self:flex-end;white-space:nowrap}
+.range-copy{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:170px}
+.range-title{font-size:12px;font-weight:600}
+.range-sub{font-size:10.5px;color:var(--faint)}
+.date-field{display:flex;flex-direction:column;gap:5px}
+.date-field span{font-size:10px;font-weight:600;color:var(--muted)}
+.date-field input{width:168px;padding:8px 10px;font-size:12px;color-scheme:dark}
+[data-theme="light"] .date-field input{color-scheme:light}
+.date-sep{font-size:12px;color:var(--faint);padding-bottom:10px}
+input{width:100%;font-size:12.5px;color:var(--text);background:var(--panel-solid);border:1px solid var(--border);border-radius:9px;padding:9px 11px;transition:border-color .18s,box-shadow .18s}
+input::placeholder{color:var(--faint)}
+input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.acct-fields{display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:10px;margin-top:14px;padding:14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:10px;font-weight:600;color:var(--muted)}
+.acct-fields .field:last-child{grid-column:1/-1}
+.field-note{margin:2px 0 0;font-size:10px;color:var(--faint);line-height:1.5}
+.field .link-tile{margin-top:10px;width:max-content}
+
+/* cards + hero */
+.card{
+  position:relative;background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)),var(--card);
+  border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+[data-theme="light"] .card{background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.65)),var(--card);box-shadow:var(--shadow),inset 0 1px 0 #fff}
+.hero{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(340px,.88fr);gap:18px;align-items:stretch;padding-top:26px}
+.hero-copy{display:flex;flex-direction:column;justify-content:center;padding:10px 6px 10px 2px;min-width:0}
+.hero-copy h1{font-family:var(--display);font-size:clamp(40px,5.2vw,66px);line-height:.96;letter-spacing:-.045em;font-weight:700;margin:14px 0 16px}
+.grad-text{background:linear-gradient(110deg,var(--text) 4%,var(--primary) 44%,var(--primary-2) 92%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-note{max-width:56ch;margin:0;color:var(--muted);font-size:13px;line-height:1.7}
+.hero-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:20px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:var(--panel-2);font-size:10.5px;font-weight:600;color:var(--muted)}
+.chip--live{color:var(--up);border-color:var(--up-border);background:var(--up-soft)}
+.chip--warn{color:var(--warn);border-color:var(--warn-border);background:var(--warn-soft)}
+.hero-card{padding:22px;overflow:hidden;display:flex;flex-direction:column;min-width:0;isolation:isolate}
+.hero-card::before{
+  content:"";position:absolute;width:340px;height:340px;right:-120px;top:-160px;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(124,108,255,.5),transparent 66%);filter:blur(12px);
+}
+.hero-card::after{
+  content:"";position:absolute;width:260px;height:260px;left:-110px;bottom:-150px;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(34,211,238,.28),transparent 68%);filter:blur(14px);
+}
+.hero-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hero-figure{font-family:var(--mono);font-size:clamp(44px,5.4vw,68px);font-weight:600;line-height:1;letter-spacing:-.055em;margin:17px 0 8px;font-variant-numeric:tabular-nums;word-break:break-word}
+.hero-figure small{font-family:var(--sans);font-size:.22em;font-weight:600;letter-spacing:.06em;color:var(--muted);margin-left:.45em;vertical-align:.35em}
+.hero-sub{font-size:11.5px;color:var(--muted);line-height:1.5}
+.spark{height:92px;margin:14px -6px -6px;position:relative}
+.spark canvas{width:100%!important;height:100%!important}
+.pos{color:var(--up)}
+.neg{color:var(--down)}
+
+/* kpis */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
+.kpi{padding:17px;min-height:168px;display:flex;flex-direction:column;overflow:hidden;transition:transform .22s,border-color .22s,box-shadow .22s}
+.kpi:hover{transform:translateY(-2px);border-color:var(--border-strong);box-shadow:var(--shadow)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:13px}
+.kpi-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);border:1px solid var(--primary-border)}
+.kpi-icon svg{width:16px;height:16px}
+.kpi-tag{font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:4px 7px;border-radius:999px;background:var(--panel-2);border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.kpi-tag.pos{color:var(--up);border-color:var(--up-border);background:var(--up-soft)}
+.kpi-tag.neg{color:var(--down);border-color:var(--down-border);background:var(--down-soft)}
+.kpi-label{font-size:11.5px;font-weight:600;color:var(--muted)}
+.kpi-value{font-family:var(--mono);font-size:clamp(24px,2.4vw,30px);font-weight:600;letter-spacing:-.045em;line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums;word-break:break-word}
+.kpi-sub{font-size:10.5px;color:var(--faint);margin-top:3px}
+.kpi-meter{height:4px;border-radius:99px;background:var(--border);overflow:hidden;margin-top:auto}
+.kpi-meter i{display:block;height:100%;border-radius:99px;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.detail-card{margin-top:14px;padding:16px 18px 18px}
+.detail-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.detail-head h3{margin:0;font-size:12.5px;font-weight:600}
+.detail-head span{font-size:10.5px;color:var(--faint)}
+.mini-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border-radius:13px;overflow:hidden;border:1px solid var(--border)}
+.mini{background:var(--panel-solid);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mini-k{font-size:9.5px;font-weight:600;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-v{font-family:var(--mono);font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-s{font-size:9px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* coach */
+.coach{margin-top:22px;padding:clamp(18px,2.6vw,26px);overflow:hidden;background:linear-gradient(145deg,var(--primary-soft),transparent 38%),linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)),var(--card)}
+.coach::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,var(--primary),var(--primary-2),transparent);opacity:.65}
+.coach-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.coach-head h2{margin:7px 0 0;font-family:var(--display);font-size:clamp(20px,2.4vw,26px);letter-spacing:-.035em;line-height:1.1}
+.tz-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);font-size:10.5px;line-height:1.45;color:var(--muted);max-width:100%}
+.tz-chip svg{width:13px;height:13px;flex:none;color:var(--primary)}
+.coach-summary{font-size:14px;line-height:1.75;color:var(--text);max-width:82ch;margin:16px 0 18px}
+.coach-summary strong{color:var(--primary);font-weight:600}
+.window-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.window{padding:15px;border:1px solid var(--border);border-radius:16px;background:var(--panel-2);position:relative;overflow:hidden}
+.window--best{border-color:var(--up-border);background:linear-gradient(135deg,var(--up-soft),transparent 72%),var(--panel-2)}
+.window--worst{border-color:var(--down-border);background:linear-gradient(135deg,var(--down-soft),transparent 72%),var(--panel-2)}
+.window-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.window-top svg{width:15px;height:15px}
+.window--best .window-top svg{color:var(--up)}
+.window--worst .window-top svg{color:var(--down)}
+.window strong{display:block;font-family:var(--mono);font-size:21px;letter-spacing:-.04em;margin:7px 0 5px}
+.window--best strong{color:var(--up)}
+.window--worst strong{color:var(--down)}
+.window-meta{font-size:11px;line-height:1.55;color:var(--muted)}
+.window-meta b{font-family:var(--mono);font-weight:600}
+.coach-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.coach-col{padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--panel-2);min-width:0}
+.col-head{display:flex;align-items:center;gap:7px;font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.dot{width:6px;height:6px;border-radius:50%;flex:none}
+.dot--down{background:var(--down);box-shadow:0 0 9px var(--down-soft)}
+.dot--warn{background:var(--warn);box-shadow:0 0 9px var(--warn-soft)}
+.dot--up{background:var(--up);box-shadow:0 0 9px var(--up-soft)}
+.coach-col ul{list-style:none;margin:0;padding:0}
+.coach-col li{position:relative;padding:9px 0 9px 13px;font-size:12px;line-height:1.55;color:var(--text);border-top:1px solid var(--border)}
+.coach-col li:first-child{border-top:0;padding-top:1px}
+.coach-col li::before{content:"";position:absolute;left:0;top:1.15em;width:3px;height:3px;border-radius:50%;background:var(--faint)}
+.coach-col--avoid li::before{background:var(--down)}
+.coach-col--mistakes li::before{background:var(--warn)}
+.coach-col--edge li::before{background:var(--up)}
+.more{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.more summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11.5px;font-weight:600;color:var(--muted);list-style:none}
+.more summary::-webkit-details-marker{display:none}
+.more summary svg{width:14px;height:14px;transition:transform .2s}
+.more[open] summary svg{transform:rotate(180deg)}
+.insight-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:7px}
+.insight-list li{position:relative;padding-left:13px;font-size:12px;line-height:1.55;color:var(--muted)}
+.insight-list li::before{content:"";position:absolute;left:0;top:.68em;width:4px;height:4px;border-radius:50%;background:var(--primary)}
+
+/* sections + charts */
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:36px 0 14px}
+.section-head h2{margin:6px 0 0;font-family:var(--display);font-size:clamp(20px,2.4vw,26px);letter-spacing:-.035em;line-height:1.1}
+.section-note{font-size:10.5px;color:var(--faint)}
+.chart-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.chart-card{padding:16px;min-width:0;transition:transform .22s,border-color .22s,box-shadow .22s}
+.chart-card:hover{transform:translateY(-2px);border-color:var(--border-strong);box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.panel-head h3{margin:0;font-size:12.5px;font-weight:600;letter-spacing:-.01em}
+.panel-head p{margin:3px 0 0;font-size:10.5px;color:var(--faint)}
+.panel-hint{font-size:10px;color:var(--faint);white-space:nowrap}
+.chart-wrap{position:relative;height:220px;margin-top:12px}
+.chart-wrap--tall{height:282px}
+.chart-card--equity{grid-column:span 8}
+.chart-card--dd{grid-column:span 4}
+.chart-card--daily{grid-column:span 8}
+.chart-card--sym{grid-column:span 4}
+.chart-card--dow,.chart-card--hour,.chart-card--side{grid-column:span 4}
+.dir{display:grid;gap:16px;padding-top:4px}
+.dir-row{display:flex;flex-direction:column;gap:6px}
+.dir-line{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dir-name{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.dir-win{font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.dir-bar{display:block;height:4px;border-radius:99px;background:var(--border);overflow:hidden}
+.dir-bar i{display:block;height:100%;border-radius:99px;background:var(--up);transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.dir-bar i.short{background:var(--down)}
+.dir-meta{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--faint)}
+.dir-meta b{font-family:var(--mono);font-weight:600}
+.side-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;font-size:10.5px;font-weight:600;border:1px solid transparent}
+.side-pill svg{width:11px;height:11px}
+.side-pill.long{color:var(--up);background:var(--up-soft);border-color:var(--up-border)}
+.side-pill.short{color:var(--down);background:var(--down-soft);border-color:var(--down-border)}
+
+/* ledger */
+.trades{padding-bottom:10px}
+.ledger-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search{position:relative;width:210px;max-width:100%}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--faint);pointer-events:none}
+.search input{padding-left:31px;height:34px;font-size:11.5px}
+.count{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.table-note{margin:9px 0 0;color:var(--faint);font-size:10.5px}
+.table-card{padding:0;overflow:hidden}
+.table-wrap{overflow:auto;max-height:520px;scrollbar-width:none;-ms-overflow-style:none}
+.table-wrap::-webkit-scrollbar{display:none}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;z-index:2;background:var(--panel-solid);color:var(--faint);text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 16px;border-bottom:1px solid var(--border);white-space:nowrap;font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:var(--panel-2)}
+tbody tr:last-child td{border-bottom:0}
+td.txt{font-family:var(--sans);font-size:12px}
+.num{text-align:right}
+.date-main{display:block;font-size:11px;color:var(--text)}
+.date-sub{display:block;font-size:9.5px;color:var(--faint);margin-top:2px}
+.sym{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:12px;font-weight:600}
+.sym-mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:9px;font-weight:700;letter-spacing:.02em;background:var(--primary-soft);color:var(--primary);border:1px solid var(--primary-border)}
+.overtrader-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:999px;border:1px solid var(--warn-border);background:var(--warn-soft);color:var(--warn);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.overtrader-badge svg{width:9px;height:9px}
+.net-pill{display:inline-flex;justify-content:flex-end;min-width:70px;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid transparent}
+.net-pill.pos{color:var(--up);background:var(--up-soft);border-color:var(--up-border)}
+.net-pill.neg{color:var(--down);background:var(--down-soft);border-color:var(--down-border)}
+.no-rows{text-align:center;color:var(--muted);padding:34px 14px!important;font-family:var(--sans);font-size:12px}
+
+/* skeleton, empty, footer */
+.skeleton{display:grid;gap:14px;margin-top:22px}
+.sk{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--border);border-radius:22px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:shimmer 1.5s infinite}
+[data-theme="light"] .sk::after{background:linear-gradient(90deg,transparent,rgba(9,9,11,.045),transparent)}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.sk-hero{height:270px}
+.sk-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.sk-kpi{height:168px}
+.sk-coach{height:390px}
+.sk-charts{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.sk-chart{height:280px}
+.empty{margin:70px auto;max-width:520px;text-align:center;padding:38px 30px;border:1px solid var(--border);border-radius:24px;background:var(--card);box-shadow:var(--shadow)}
+.empty-icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;margin:0 auto 18px;background:var(--primary-soft);color:var(--primary);border:1px solid var(--primary-border)}
+.empty-icon svg{width:22px;height:22px}
+.empty h3{font-family:var(--display);font-size:20px;letter-spacing:-.03em;margin:0 0 8px}
+.empty p{margin:0 0 20px;color:var(--muted);font-size:12.5px;line-height:1.65}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 18px;margin-top:30px;padding-top:16px;border-top:1px solid var(--border);font-size:10.5px;color:var(--faint)}
+.hosted-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:14px;padding:16px 18px;border:1px solid var(--primary-border);border-radius:18px;background:linear-gradient(135deg,var(--primary-soft),transparent 68%),var(--card);box-shadow:var(--shadow)}
+.hosted-banner[hidden]{display:none!important}
+.hosted-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hosted-title{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:-.02em}
+.hosted-banner p{margin:0;color:var(--muted);font-size:12px;line-height:1.55;max-width:64ch}
+.hosted-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;flex:none}
+.hosted-connect{min-width:172px}
+.link-tile{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:11.5px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--border-strong);padding:0 0 2px}
+.link-tile:hover{color:var(--text);border-color:var(--primary)}
+.help-modal{position:fixed;inset:0;z-index:75;display:grid;place-items:center;padding:18px}
+.help-modal[hidden]{display:none!important}
+.help-backdrop{position:absolute;inset:0;background:rgba(4,4,8,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.help-panel{position:relative;width:min(760px,100%);max-height:min(84vh,820px);overflow:auto;padding:24px;border:1px solid var(--border-strong);border-radius:22px;background:var(--panel-solid);box-shadow:var(--shadow)}
+.help-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.help-head h2{font-family:var(--display);font-size:clamp(22px,3vw,30px);line-height:1.12;letter-spacing:-.035em;margin:7px 0 0}
+.help-intro{color:var(--muted);line-height:1.65;margin:0 0 18px}
+.help-steps{counter-reset:step;list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px}
+.help-steps li{counter-increment:step;position:relative;padding:13px 14px 13px 52px;border:1px solid var(--border);border-radius:16px;background:var(--panel-2);color:var(--text);line-height:1.55;font-size:12.5px}
+.help-steps li::before{content:counter(step);position:absolute;left:14px;top:13px;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-family:var(--display);font-weight:600;font-size:12px}
+.help-steps strong{color:var(--text)}
+.help-steps code,.help-note code{font-family:var(--mono);font-size:11px;background:var(--chip-bg,var(--panel-solid));border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--primary)}
+.help-note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--warn-border);background:var(--warn-soft);border-radius:16px;color:var(--muted);font-size:12px;line-height:1.55}
+.help-note svg{flex:none;width:18px;height:18px;color:var(--warn);margin-top:1px}
+.help-note strong{color:var(--text)}
+.help-foot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;margin-top:18px}
+.help-link-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+.help-link-row a{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:11.5px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--border-strong)}
+.help-link-row a:hover{color:var(--text);border-color:var(--primary)}
+@media(max-width:760px){.hosted-banner{align-items:flex-start;flex-direction:column;padding:15px}.hosted-actions{justify-content:flex-start}.help-panel{padding:19px}.help-steps li{padding-left:47px}}
+
+/* reveal + mobile nav */
+#dashboard.reveal{opacity:0;transform:translateY(8px)}
+#dashboard.reveal.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.2,1)}
+.reveal.in .hero,.reveal.in .kpi,.reveal.in .detail-card,.reveal.in .coach,.reveal.in .chart-card,.reveal.in .trades{animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+.reveal.in .kpi:nth-child(2){animation-delay:.05s}.reveal.in .kpi:nth-child(3){animation-delay:.1s}.reveal.in .kpi:nth-child(4){animation-delay:.15s}
+.reveal.in .coach{animation-delay:.06s}.reveal.in .chart-card:nth-child(2){animation-delay:.04s}.reveal.in .chart-card:nth-child(3){animation-delay:.08s}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.mobile-nav{display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:60;padding:6px 6px calc(6px + env(safe-area-inset-bottom));border:1px solid var(--border-strong);border-radius:18px;background:rgba(15,15,20,.82);backdrop-filter:blur(20px);box-shadow:0 20px 40px rgba(0,0,0,.45);justify-content:space-around}
+[data-theme="light"] .mobile-nav{background:rgba(255,255,255,.86);box-shadow:0 20px 40px rgba(15,23,42,.14)}
+.mobile-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 11px;border-radius:12px;color:var(--faint);font-size:9px;font-weight:600;text-decoration:none;transition:color .16s,background .16s}
+.mobile-nav a svg{width:17px;height:17px}
+.mobile-nav a.is-active{color:var(--text);background:var(--primary-soft)}
+
+/* responsive */
+@media(max-width:1100px){
+  .hero{grid-template-columns:1fr;}
+  .hero-copy{padding-top:0}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-card--equity,.chart-card--daily{grid-column:span 12}
+  .chart-card--dd,.chart-card--sym,.chart-card--dow,.chart-card--hour{grid-column:span 6}
+  .chart-card--side{grid-column:span 12}
+  .mini-grid{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:980px){
+  .sidebar{transform:translateX(-105%);transition:transform .28s cubic-bezier(.2,.7,.2,1);width:min(86vw,300px);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .sidebar.open{transform:none}
+  .canvas{margin-left:0}
+  .menu-btn{display:grid}
+  .page{padding-bottom:112px}
+  .mobile-nav{display:flex}
+  .crumbs{display:none}
+  .mobile-brand{display:block;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:-.02em}
+  body.nav-open{overflow:hidden}
+}
+@media(max-width:760px){
+  .topbar{flex-wrap:wrap;padding-top:10px;padding-bottom:10px;gap:9px}
+  .top-actions{width:100%;order:3;justify-content:space-between;gap:7px}
+  .segmented{flex:1;min-width:0}
+  .top-avatar{display:none}
+  .rb-label{display:none}
+  .hero{padding-top:18px}
+  .hero-copy h1{font-size:clamp(36px,9vw,48px)}
+  .hero-card{padding:18px}
+  .hero-figure{font-size:clamp(40px,11vw,54px)}
+  .coach-cols{grid-template-columns:1fr}
+  .window-grid{grid-template-columns:1fr}
+  .mini-grid{grid-template-columns:repeat(2,1fr)}
+  .sk-kpis{grid-template-columns:repeat(2,1fr)}
+  .sk-charts{grid-template-columns:1fr}
+  .section-head{margin-top:28px}
+  .search{width:100%}
+  .ledger-tools{width:100%}
+  .count{width:100%}
+  .date-field{flex:1;min-width:130px}
+  .date-field input{width:100%}
+  .date-sep{display:none}
+  .range-copy{width:100%}
+  .acct-fields{grid-template-columns:1fr}
+  .acct-fields .field:last-child{grid-column:auto}
+  .table-wrap{max-height:430px}
+  th,td{padding:10px 12px}
+}
+@media(max-width:520px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .kpi{min-height:156px;padding:14px}
+  .kpi-value{font-size:22px}
+  .chart-card{padding:14px}
+  .chart-wrap{height:200px}
+  .chart-wrap--tall{height:236px}
+  .subbar-actions{width:100%;justify-content:space-between}
+  .btn{padding:8px 11px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  #dashboard.reveal{opacity:1;transform:none}
+}
+
+</style>
+<script>
+try {
+  var t = localStorage.getItem('te-theme');
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg>
+      </div>
+      <div>
+        <span class="brand-name">Trading Edge</span>
+        <span class="brand-sub">MT5 intelligence</span>
+      </div>
+    </div>
+    <nav class="side-nav" aria-label="Primary">
+      <a class="nav-item is-active" href="#overview" data-nav="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Overview
+      </a>
+      <a class="nav-item" href="#performance" data-nav="performance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-9"/><path d="M3 21h18"/></svg>
+        Performance
+      </a>
+      <a class="nav-item" href="#coach" data-nav="coach">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/></svg>
+        Coach
+      </a>
+      <a class="nav-item" href="#trades" data-nav="trades">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+        Trades
+      </a>
+    </nav>
+    <div class="account-card">
+      <div class="account-top"><span class="eyebrow">Connected account</span><span class="live-dot"></span></div>
+      <div class="account-id" id="acctSide" hidden>
+        <div class="avatar" id="acctAvatar">TE</div>
+        <div style="min-width:0"><div class="account-name" id="acctName"></div><div class="account-meta" id="acctMeta"></div></div>
+      </div>
+      <div class="account-placeholder" id="acctPlaceholder">Waiting for the MT5 terminal…</div>
+      <button class="btn btn-ghost btn-sm" id="acctToggle" type="button">Use another account</button>
+    </div>
+    <div class="side-foot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+      Local terminal · nothing stored
+    </div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+
+  <div class="canvas">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="mobile-brand">Trading Edge</div>
+      <div class="crumbs"><span>Workspace</span><span class="crumb-sep">/</span><strong>Overview</strong></div>
+      <div class="top-actions">
+        <div class="segmented" id="periods" role="group" aria-label="Analysis period">
+          <button type="button" data-days="7">7D</button>
+          <button type="button" data-days="30">30D</button>
+          <button type="button" data-days="90" class="is-on">90D</button>
+          <button type="button" data-days="180">6M</button>
+          <button type="button" data-days="365">1Y</button>
+          <button type="button" data-days="1825">5Y</button>
+          <button type="button" data-days="custom">Custom</button>
+        </div>
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to light theme" title="Switch theme">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>
+        </button>
+        <button class="btn btn-primary" id="analyzeBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>
+          <span>Run analysis</span>
+        </button>
+        <div class="avatar top-avatar" id="avatar" title="Account">TE</div>
+      </div>
+    </header>
+
+    <div class="page">
+      <div class="subbar">
+        <div class="status" id="msg" role="status" aria-live="polite">Connecting to your MT5 terminal…</div>
+        <div class="subbar-actions">
+          <button class="link-btn" id="acctToggleTop" type="button">Switch account</button>
+          <span class="subbar-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+            Read-only · local only
+          </span>
+        </div>
+      </div>
+
+      <div class="hosted-banner" id="hostedBanner" hidden>
+        <div class="hosted-copy">
+          <div class="eyebrow"><span class="live-dot"></span>Hosted setup</div>
+          <strong class="hosted-title">Your MT5 stays on your PC</strong>
+          <p>This hosted page cannot reach your Windows MetaTrader 5 terminal. Start the local bridge, keep MT5 open and logged in, then connect it from this page.</p>
+        </div>
+        <div class="hosted-actions">
+          <button class="btn btn-primary hosted-connect" id="hostedConnect" type="button">Connect local MT5</button>
+          <button class="link-tile" id="hostedHelp" type="button">Setup guide</button>
+          <a class="link-tile" href="http://127.0.0.1:5000">Open local app</a>
+        </div>
+      </div>
+
+      <div class="range-panel" id="customRange" hidden>
+        <div class="range-inner">
+          <div class="range-copy"><span class="range-title">Custom range</span><span class="range-sub">Closed trades between these dates</span></div>
+          <label class="date-field"><span>From</span><input type="date" id="dateFrom"></label>
+          <span class="date-sep">→</span>
+          <label class="date-field"><span>Through</span><input type="date" id="dateTo"></label>
+          <button class="btn btn-primary range-apply" id="applyRange" type="button">Apply range</button>
+        </div>
+      </div>
+
+      <div class="acct-fields card" id="acctFields" hidden>
+        <div class="field"><label for="login">Login ID</label><input id="login" inputmode="numeric" autocomplete="off" placeholder="e.g. 20245062"></div>
+        <div class="field"><label for="pw">Investor password</label><input id="pw" type="password" autocomplete="new-password" placeholder="Read-only password"></div>
+        <div class="field"><label for="server">Broker server</label><input id="server" autocomplete="off" placeholder="e.g. ZuperiorFX-Server"></div>
+        <div class="field"><p class="field-note">Investor (read-only) credentials keep trading disabled. Nothing is stored on this device or sent anywhere else.</p><button class="link-tile" id="mt5Help" type="button">How to connect MT5</button></div>
+      </div>
+
+      <div class="skeleton" id="skeleton" hidden>
+        <div class="sk sk-hero"></div>
+        <div class="sk-kpis"><div class="sk sk-kpi"></div><div class="sk sk-kpi"></div><div class="sk sk-kpi"></div><div class="sk sk-kpi"></div></div>
+        <div class="sk sk-coach"></div>
+        <div class="sk-charts"><div class="sk sk-chart"></div><div class="sk sk-chart"></div></div>
+      </div>
+
+      <div class="empty" id="empty" hidden></div>
+
+      <main id="dashboard" class="reveal" hidden>
+        <section class="hero" id="overview">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="live-dot"></span>Performance review</div>
+            <h1>Your edge,<br><span class="grad-text">decoded.</span></h1>
+            <p class="hero-note" id="heroNote">Closed trades from your connected terminal, translated into a clear read.</p>
+            <div class="hero-badges">
+              <span class="chip" id="heroRange">Last 90 days</span>
+              <span class="chip" id="heroTz">Broker time</span>
+              <span class="chip chip--warn" id="heroSkipped" hidden></span>
+            </div>
+          </div>
+          <div class="hero-card card">
+            <div class="hero-card-top"><span class="eyebrow">Net result</span><span class="chip" id="heroTrend">—</span></div>
+            <div class="hero-figure" id="heroNet">—</div>
+            <div class="hero-sub" id="heroTrades">—</div>
+            <div class="spark"><canvas id="heroSpark" aria-label="Equity sparkline"></canvas></div>
+          </div>
+        </section>
+
+        <section class="kpi-grid" id="metrics" aria-label="Key metrics"></section>
+
+        <div class="detail-card card">
+          <div class="detail-head"><h3>Account detail</h3><span>Closed trades only</span></div>
+          <div class="mini-grid" id="metricDetail"></div>
+        </div>
+
+        <section class="coach card" id="coach">
+          <div class="coach-head">
+            <div>
+              <div class="eyebrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/></svg>
+                Coach's read
+              </div>
+              <h2>What the data is telling you</h2>
+            </div>
+            <div class="tz-chip" id="tzBadge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>
+              <span>Broker server time</span>
+            </div>
+          </div>
+          <p class="coach-summary" id="coachSummary">Run an analysis to generate your read.</p>
+          <div class="window-grid">
+            <div class="window window--best">
+              <div class="window-top"><span>Best window</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-9"/><path d="M15 6h5v5"/></svg></div>
+              <strong id="bestWindow">—</strong>
+              <span class="window-meta" id="bestWindowMeta">—</span>
+            </div>
+            <div class="window window--worst">
+              <div class="window-top"><span>Costliest window</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l5 5 4-3 7 9"/><path d="M15 18h5v-5"/></svg></div>
+              <strong id="worstWindow">—</strong>
+              <span class="window-meta" id="worstWindowMeta">—</span>
+            </div>
+          </div>
+          <div class="coach-cols">
+            <div class="coach-col coach-col--avoid"><div class="col-head"><span class="dot dot--down"></span>Avoid</div><ul id="avoidList"></ul></div>
+            <div class="coach-col coach-col--mistakes"><div class="col-head"><span class="dot dot--warn"></span>Mistakes to fix</div><ul id="mistakeList"></ul></div>
+            <div class="coach-col coach-col--edge"><div class="col-head"><span class="dot dot--up"></span>Lean into</div><ul id="edgeList"></ul></div>
+          </div>
+          <details class="more">
+            <summary><span>More observations</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+            <ul class="insight-list" id="insightsList"></ul>
+          </details>
+        </section>
+
+        <section class="performance" id="performance">
+          <div class="section-head">
+            <div><div class="eyebrow">Analytics</div><h2>Performance</h2></div>
+            <span class="section-note" id="perfNote">Closed trades only</span>
+          </div>
+          <div class="chart-grid">
+            <article class="chart-card card chart-card--equity">
+              <div class="panel-head"><div><h3>Equity curve</h3><p>Cumulative closed P&amp;L</p></div><span class="panel-hint" id="eqHint">—</span></div>
+              <div class="chart-wrap chart-wrap--tall"><canvas id="eq"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--dd">
+              <div class="panel-head"><div><h3>Drawdown</h3><p>Distance from peak</p></div><span class="panel-hint" id="ddHint">—</span></div>
+              <div class="chart-wrap chart-wrap--tall"><canvas id="dd"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--daily">
+              <div class="panel-head"><div><h3>Daily P&amp;L</h3><p>By close date</p></div><span class="panel-hint">zero line</span></div>
+              <div class="chart-wrap"><canvas id="day"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--sym">
+              <div class="panel-head"><div><h3>Net by symbol</h3><p>Worst to best</p></div><span class="panel-hint">closed P&amp;L</span></div>
+              <div class="chart-wrap"><canvas id="sym"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--dow">
+              <div class="panel-head"><div><h3>Net by weekday</h3><p>Open time</p></div><span class="panel-hint">broker time</span></div>
+              <div class="chart-wrap"><canvas id="dow"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--hour">
+              <div class="panel-head"><div><h3>Net by hour</h3><p>Open time</p></div><span class="panel-hint">broker time</span></div>
+              <div class="chart-wrap"><canvas id="hr"></canvas></div>
+            </article>
+            <article class="chart-card card chart-card--side">
+              <div class="panel-head"><div><h3>Direction</h3><p>Long vs short</p></div><span class="panel-hint">win rate</span></div>
+              <div class="dir" id="side"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="trades" id="trades">
+          <div class="section-head">
+            <div><div class="eyebrow">Ledger</div><h2>Recent trades</h2></div>
+            <div class="ledger-tools">
+              <div class="search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                <input id="tradeSearch" placeholder="Filter symbol, side or overtrader" autocomplete="off" aria-label="Filter trades by symbol, side or overtrader badge">
+              </div>
+              <span class="count" id="tableCount"></span>
+            </div>
+          </div>
+          <p class="table-note">Overtrader marks 3+ trades on the same symbol in the same direction on the same day.</p>
+          <div class="table-card card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Opened</th><th>Closed</th><th>Symbol</th><th>Direction</th><th class="num">Lots</th><th class="num">Held (min)</th><th class="num">Net</th></tr></thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <footer class="foot">
+          <span>Analysed in memory from the MT5 terminal. Nothing is stored.</span>
+          <span id="footSkipped"></span>
+        </footer>
+      </main>
+    </div>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <a class="is-active" href="#overview" data-nav="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#performance" data-nav="performance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-9"/><path d="M3 21h18"/></svg>
+        <span>Charts</span>
+      </a>
+      <a href="#coach" data-nav="coach">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/></svg>
+        <span>Coach</span>
+      </a>
+      <a href="#trades" data-nav="trades">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+        <span>Trades</span>
+      </a>
+    </nav>
+  </div>
+</div>
+    <div class="help-modal" id="mt5HelpModal" role="dialog" aria-modal="true" aria-labelledby="mt5HelpTitle" aria-describedby="mt5HelpIntro" hidden>
+      <div class="help-backdrop" data-help-close></div>
+      <div class="help-panel" role="document">
+        <header class="help-head">
+          <div>
+            <div class="eyebrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9.5 12l1.8 1.8 3.4-3.8"/></svg>MT5 setup</div>
+            <h2 id="mt5HelpTitle">Connect a desktop MT5 account</h2>
+          </div>
+          <button class="icon-btn" id="helpClose" type="button" aria-label="Close setup guide" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </header>
+        <p class="help-intro" id="mt5HelpIntro">The dashboard reads your locally installed MT5 terminal over a local IPC connection. The hosted page cannot see the terminal on its own, so the bridge must run on the same Windows PC that has MT5 open and logged in.</p>
+        <ol class="help-steps">
+          <li><strong>Install the desktop MT5 from your broker and log in.</strong> Use a demo account first if you are testing. Web or mobile MT5 does not expose this history API.</li>
+          <li><strong>Download the history.</strong> In MT5, open the <b>Account History</b> tab, right-click inside it, choose <b>Custom period…</b>, pick the date range you want, and press OK. Scroll the list or refresh until the deals appear.</li>
+          <li><strong>Install Python and the package.</strong> On the same PC as MT5, use 64-bit Python and run <code>py -3.11 -m pip install MetaTrader5 pandas flask</code>.</li>
+          <li><strong>Keep MT5 open while reading.</strong> Start the local bridge from the project folder: <code>py -3.11 app.py</code>, then open <code>http://127.0.0.1:5000</code>. It attaches to the running terminal automatically and never asks for your password.</li>
+          <li><strong>Switch account safely.</strong> If you want to read a different account, click <b>Switch account</b> and enter the account login, <b>investor password</b>, and the broker server name exactly as it appears in the MT5 login dialog, then click <b>Run analysis</b>.</li>
+          <li><strong>Use read-only credentials.</strong> The investor password cannot place, modify or close trades. The app does not call any order function and does not store the password. Never use or share your master password for this.</li>
+          <li><strong>If the report is empty.</strong> Check that MT5 is open and logged in, the server string matches exactly, the history range has been downloaded, Python is 64-bit, and <code>py -3.11 -c "import MetaTrader5 as mt5; print(mt5.initialize())"</code> prints <code>True</code>.</li>
+          <li><strong>On the hosted Vercel site.</strong> Click <b>Connect local MT5</b> only after the local bridge is running and MT5 is open. If the browser blocks it, open <code>http://127.0.0.1:5000</code> instead and use the same dashboard locally.</li>
+        </ol>
+        <div class="help-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3l9-16z"/><path d="M12 9v5M12 17.5v.5"/></svg><span><strong>Passwords are never uploaded.</strong> Trading Edge analyzer sends account and history requests to your local MT5 terminal. The Vercel deployment is only the interface and guide; it cannot fetch a client account by itself.</span></div>
+        <div class="help-link-row"><a href="https://www.mql5.com/en/docs/python_metatrader5" target="_blank" rel="noreferrer">MetaTrader5 Python API <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a><a href="https://www.mql5.com/en/book/advanced/python/python_install" target="_blank" rel="noreferrer">Python + MT5 setup guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a></div>
+        <div class="help-foot"><a class="btn btn-primary" href="http://127.0.0.1:5000">Open local app</a><button class="link-btn" id="helpDone" type="button">Got it</button></div>
+      </div>
+    </div>
+<script>
+
+const root = document.documentElement;
+const $ = (id) => document.getElementById(id);
+const LOCAL_APP_URL = 'http://127.0.0.1:5000';
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_URL = IS_LOCAL ? '/api/analyze' : `${LOCAL_APP_URL}/api/analyze`;
+const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const nf = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+const cf = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
+const f = (v) => (v == null ? '—' : nf.format(v));
+const signed = (v) => (v == null ? '—' : (v > 0 ? '+' : '') + nf.format(v));
+const tone = (v) => (v >= 0 ? 'pos' : 'neg');
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cvar = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+const clampPct = (v) => Math.max(0, Math.min(100, Number(v) || 0));
+
+const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+const MOON = '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>';
+
+const ICONS = {
+  target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></svg>',
+  scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 7l-3 7h6L5 7zM19 7l-3 7h6l-3-7z"/></svg>',
+  activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-7 4.5 14 2.5-7H21"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9.5 12l1.8 1.8 3.4-3.8"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3l9-16z"/><path d="M12 9v5M12 17.5v.5"/></svg>',
+  arrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>',
+  arrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7v10H7"/></svg>'
+};
+
+let currentData = null;
+let currentTable = [];
+let charts = {};
+let loading = false;
+let days = 90;
+let customMode = false;
+let helpTrigger = null;
+
+function setConnectionMode() {
+  $('hostedBanner').hidden = IS_LOCAL;
+  if (IS_LOCAL) {
+    $('msg').textContent = 'Connecting to your MT5 terminal…';
+    return;
+  }
+  $('msg').textContent = 'Hosted page · connect your local MT5 bridge';
+  $('analyzeBtn').querySelector('span').textContent = 'Connect MT5';
+}
+
+function openHelp(trigger) {
+  helpTrigger = trigger || null;
+  $('mt5HelpModal').hidden = false;
+  document.body.classList.add('nav-open');
+  $('helpClose').focus();
+}
+
+function closeHelp() {
+  $('mt5HelpModal').hidden = true;
+  document.body.classList.remove('nav-open');
+  if (helpTrigger) helpTrigger.focus();
+  helpTrigger = null;
+}
+
+function initConnection() {
+  setConnectionMode();
+  if (IS_LOCAL) run();
+}
+
+function rgba(hex, alpha) {
+  let h = String(hex).replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function syncTheme() {
+  const light = root.dataset.theme === 'light';
+  $('themeIcon').innerHTML = light ? MOON : SUN;
+  const label = light ? 'Switch to dark theme' : 'Switch to light theme';
+  $('themeBtn').setAttribute('aria-label', label);
+  $('themeBtn').title = label;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', light ? '#f6f6f8' : '#08080b');
+}
+syncTheme();
+
+$('themeBtn').addEventListener('click', () => {
+  root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+  localStorage.setItem('te-theme', root.dataset.theme);
+  syncTheme();
+  if (currentData && !$('dashboard').hidden) renderCharts(currentData);
+});
+
+function isoDate(d) {
+  const copy = new Date(d.getTime());
+  copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
+  return copy.toISOString().slice(0, 10);
+}
+
+function setDefaultRange(span) {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - span);
+  $('dateFrom').value = isoDate(from);
+  $('dateTo').value = isoDate(to);
+}
+
+function initials(name) {
+  const parts = String(name || 'Trading Edge').trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0] || '').join('').toUpperCase() || 'TE';
+}
+
+$('periods').addEventListener('click', (event) => {
+  const btn = event.target.closest('button[data-days]');
+  if (!btn) return;
+  const value = btn.dataset.days;
+  customMode = value === 'custom';
+  if (!customMode) days = Number(value);
+  $('customRange').hidden = !customMode;
+  if (customMode && (!$('dateFrom').value || !$('dateTo').value)) setDefaultRange(days);
+  [...$('periods').children].forEach((child) => child.classList.toggle('is-on', child === btn));
+  if (customMode) $('dateFrom').focus();
+});
+
+function toggleAccountFields() {
+  const fields = $('acctFields');
+  fields.hidden = !fields.hidden;
+  $('acctToggle').textContent = fields.hidden ? 'Use another account' : 'Hide account fields';
+  $('acctToggleTop').textContent = fields.hidden ? 'Switch account' : 'Hide account fields';
+}
+$('acctToggle').addEventListener('click', toggleAccountFields);
+$('acctToggleTop').addEventListener('click', toggleAccountFields);
+$('applyRange').addEventListener('click', run);
+['dateFrom', 'dateTo'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); }));
+$('analyzeBtn').addEventListener('click', run);
+$('hostedConnect').addEventListener('click', run);
+$('hostedHelp').addEventListener('click', (e) => openHelp(e.currentTarget));
+$('mt5Help').addEventListener('click', (e) => openHelp(e.currentTarget));
+$('helpClose').addEventListener('click', closeHelp);
+$('helpDone').addEventListener('click', closeHelp);
+document.querySelector('[data-help-close]').addEventListener('click', closeHelp);
+
+$('tradeSearch').addEventListener('input', () => {
+  const q = $('tradeSearch').value.trim().toLowerCase();
+  const rows = currentTable.filter((r) => {
+    const haystack = `${r.symbol || ''} ${r.side || ''} ${r.setup || ''} ${r.overtrade ? 'overtrader' : ''}`.toLowerCase();
+    return !q || haystack.includes(q);
+  });
+  renderTable(rows);
+});
+
+const sidebar = $('sidebar');
+const backdrop = $('backdrop');
+function closeNav() {
+  sidebar.classList.remove('open');
+  backdrop.classList.remove('show');
+  document.body.classList.remove('nav-open');
+}
+$('menuBtn').addEventListener('click', () => {
+  const open = !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', open);
+  backdrop.classList.toggle('show', open);
+  document.body.classList.toggle('nav-open', open);
+});
+backdrop.addEventListener('click', closeNav);
+document.querySelectorAll('.nav-item, .mobile-nav a').forEach((a) => a.addEventListener('click', closeNav));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('mt5HelpModal').hidden) closeHelp(); else closeNav(); } });
+
+function setLoading(on) {
+  $('analyzeBtn').disabled = on;
+  $('analyzeBtn').querySelector('span').textContent = on ? 'Reading MT5…' : 'Run analysis';
+  $('skeleton').hidden = !on;
+  if (on) {
+    $('empty').hidden = true;
+    $('dashboard').hidden = true;
+    $('msg').classList.remove('is-err');
+    $('msg').textContent = IS_LOCAL ? 'Pulling trade history from the MT5 terminal…' : 'Asking your local MT5 bridge…';
+  }
+}
+
+function networkMessage(err) {
+  const raw = err && err.message ? err.message : '';
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(raw)) {
+    return IS_LOCAL
+      ? 'The Flask server is not reachable. Check that app.py is running, then try again.'
+      : `This page cannot reach your local MT5 bridge. Open a command prompt in the project folder, run 'py -3.11 app.py', keep MT5 open and logged in, then try again.`;
+  }
+  return raw || 'The server did not respond. Try again in a moment.';
+}
+
+function showError(message) {
+  $('dashboard').hidden = true;
+  $('skeleton').hidden = true;
+  $('empty').hidden = false;
+  $('empty').replaceChildren();
+  const icon = document.createElement('div');
+  icon.className = 'empty-icon';
+  icon.innerHTML = ICONS.alert;
+  const h = document.createElement('h3');
+  h.textContent = 'No performance data loaded';
+  const p = document.createElement('p');
+  p.textContent = message;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-primary';
+  btn.textContent = 'Try again';
+  btn.addEventListener('click', run);
+  $('empty').append(icon, h, p, btn);
+  $('msg').classList.add('is-err');
+  $('msg').textContent = 'The terminal could not be read.';
+}
+
+async function run() {
+  if (loading) return;
+
+  const body = {
+    login: $('login').value.trim(),
+    password: $('pw').value,
+    server: $('server').value.trim(),
+  };
+
+  if (customMode) {
+    const fromValue = $('dateFrom').value;
+    const toValue = $('dateTo').value;
+    if (!fromValue || !toValue) {
+      showError('Choose both a start and end date for the custom range.');
+      return;
+    }
+    if (fromValue > toValue) {
+      showError('The end date must be on or after the start date.');
+      return;
+    }
+    body.from = fromValue;
+    body.to = toValue;
+  } else {
+    body.days = days;
+  }
+
+  loading = true;
+  setLoading(true);
+
+  let data;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    data = await res.json();
+  } catch (err) {
+    loading = false;
+    setLoading(false);
+    showError(networkMessage(err));
+    return;
+  }
+
+  loading = false;
+  setLoading(false);
+
+  if (!data || data.error) {
+    showError((data && data.error) || 'The server returned an unexpected response.');
+    return;
+  }
+
+  currentData = data;
+  renderContent(data);
+  $('hostedBanner').hidden = true;
+
+  $('empty').hidden = true;
+  const dash = $('dashboard');
+  dash.classList.remove('in');
+  dash.hidden = false;
+  void dash.offsetWidth;
+  dash.classList.add('in');
+
+  const rangeLabel = customMode ? `${body.from} → ${body.to}` : `Last ${days} days`;
+  $('heroRange').textContent = rangeLabel;
+  requestAnimationFrame(() => renderCharts(data));
+  syncNav();
+
+  $('msg').classList.remove('is-err');
+  $('msg').textContent = data.skipped
+    ? `Reviewed ${f(data.kpis.trades)} closed trades (${rangeLabel}). ${data.skipped} open position${data.skipped === 1 ? '' : 's'} left out.`
+    : `Reviewed ${f(data.kpis.trades)} closed trades (${rangeLabel}).`;
+}
+
+function renderContent(d) {
+  renderAccount(d.account || {});
+  renderHero(d);
+  renderMetrics(d.kpis);
+  renderDetail(d.kpis);
+  renderCoach(d);
+  renderInsights(d);
+  renderSide(d.by_side || []);
+  currentTable = d.table || [];
+  $('tradeSearch').value = '';
+  renderTable(currentTable);
+  $('perfNote').textContent = `${f(d.kpis.trades)} closed trades`;
+  $('footSkipped').textContent = d.skipped
+    ? `${d.skipped} open position${d.skipped === 1 ? '' : 's'} not included`
+    : '';
+}
+
+function renderAccount(a) {
+  const has = a && a.login;
+  $('acctSide').hidden = !has;
+  $('acctPlaceholder').hidden = !!has;
+  const label = initials(has ? (a.name || 'Trading account') : 'Trading Edge');
+  $('avatar').textContent = label;
+  if (has) {
+    $('acctAvatar').textContent = label;
+    $('acctName').textContent = a.name || 'Trading account';
+    $('acctMeta').textContent = `#${a.login} · ${a.server || 'MT5'}`;
+  }
+}
+
+function renderHero(d) {
+  const k = d.kpis;
+  const a = d.account || {};
+  const cur = a.currency || '';
+  $('heroNet').innerHTML = `<span class="${tone(k.net)}">${signed(k.net)}</span>` +
+    (cur ? ` <small>${esc(cur)}</small>` : '');
+
+  const bits = [`${f(k.trades)} closed trades`, `${f(k.win_rate)}% win rate`];
+  if (a && a.balance != null) bits.push(`Balance ${f(a.balance)} ${esc(cur)}`);
+  if (a && a.equity != null) bits.push(`Equity ${f(a.equity)} ${esc(cur)}`);
+  $('heroNote').textContent = bits.join(' · ');
+  $('heroTrades').textContent = `${f(k.trades)} closed trades · ${signed(k.expectancy)} avg per trade`;
+
+  $('heroTrend').innerHTML = `<span class="live-dot"${k.net >= 0 ? '' : ' style="background:var(--down);box-shadow:0 0 0 4px var(--down-soft)"'}></span>${k.net >= 0 ? 'In profit' : 'In drawdown'}`;
+  $('heroTz').textContent = d.tz && d.tz.server_label ? `Server ${d.tz.server_label}` : 'Broker server time';
+  $('heroSkipped').hidden = !d.skipped;
+  if (d.skipped) $('heroSkipped').textContent = `${d.skipped} open left out`;
+  $('eqHint').textContent = signed(k.net);
+  $('ddHint').textContent = signed(k.max_dd);
+}
+
+function renderMetrics(k) {
+  const pf = Number(k.profit_factor) || 0;
+  const exp = Number(k.expectancy) || 0;
+  const items = [
+    { label: 'Win rate', value: `${f(k.win_rate)}%`, sub: `${f(k.trades)} closed trades`, icon: 'target',
+      tag: k.win_rate >= 50 ? 'Above half' : 'Below half', tagTone: k.win_rate >= 50 ? 'pos' : 'neg',
+      meter: clampPct(k.win_rate), color: 'var(--up)', valueTone: '' },
+    { label: 'Profit factor', value: f(k.profit_factor), sub: 'gross win / gross loss', icon: 'scale',
+      tag: pf >= 1.5 ? 'Strong' : pf >= 1 ? 'Break-even+' : 'Below 1', tagTone: pf >= 1 ? 'pos' : 'neg',
+      meter: clampPct(pf / 2 * 100), color: pf >= 1 ? 'var(--up)' : 'var(--down)', valueTone: pf >= 1 ? 'pos' : 'neg' },
+    { label: 'Expectancy', value: signed(k.expectancy), sub: 'average result per trade', icon: 'activity',
+      tag: exp >= 0 ? 'Positive' : 'Negative', tagTone: exp >= 0 ? 'pos' : 'neg',
+      meter: clampPct(Math.abs(exp) / Math.max(1, Math.abs(k.avg_loss || 1)) * 100), color: exp >= 0 ? 'var(--up)' : 'var(--down)', valueTone: tone(exp) },
+    { label: 'Max drawdown', value: signed(k.max_dd), sub: 'from equity peak', icon: 'shield',
+      tag: 'Risk', tagTone: 'neg',
+      meter: clampPct(Math.abs(k.max_dd || 0) / Math.max(1, Math.abs(k.worst || 1)) * 100), color: 'var(--down)', valueTone: 'neg' }
+  ];
+  $('metrics').innerHTML = items.map((it) => `<article class="kpi card">
+    <div class="kpi-top"><span class="kpi-icon">${ICONS[it.icon]}</span><span class="kpi-tag ${it.tagTone}">${it.tag}</span></div>
+    <div class="kpi-label">${it.label}</div>
+    <div class="kpi-value ${it.valueTone}">${it.value}</div>
+    <div class="kpi-sub">${it.sub}</div>
+    <div class="kpi-meter"><i style="width:${it.meter}%;background:${it.color}"></i></div>
+  </article>`).join('');
+}
+
+function renderDetail(k) {
+  const items = [
+    ['Trades', f(k.trades), '', 'closed positions'],
+    ['Gross P&L', signed(k.gross), tone(k.gross), 'before costs'],
+    ['Costs', signed(k.costs), tone(k.costs), 'commission + swap'],
+    ['Average win', signed(k.avg_win), 'pos', 'per winner'],
+    ['Average loss', signed(k.avg_loss), 'neg', 'per loser'],
+    ['Best trade', signed(k.best), 'pos', 'single trade'],
+    ['Worst trade', signed(k.worst), 'neg', 'single trade'],
+    ['Loss streak', f(k.max_loss_streak), '', 'max in a row'],
+    ['Win streak', f(k.max_win_streak), '', 'max in a row'],
+    ['Avg hold', `${f(k.avg_hold_win)} / ${f(k.avg_hold_loss)}`, '', 'win / loss min'],
+    ['Revenge trades', f(k.revenge_trades), tone(k.revenge_net), `net ${signed(k.revenge_net)}`],
+    ['Net result', signed(k.net), tone(k.net), `${f(k.trades)} trades`]
+  ];
+  $('metricDetail').innerHTML = items.map(([label, value, cls, sub]) => `<div class="mini">
+    <span class="mini-k">${label}</span>
+    <span class="mini-v ${cls}">${value}</span>
+    <span class="mini-s">${sub}</span>
+  </div>`).join('');
+}
+
+function fillList(id, items) {
+  const list = $(id);
+  list.replaceChildren();
+  const arr = Array.isArray(items) && items.length ? items : ['No clear signal in this sample.'];
+  arr.forEach((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    list.append(li);
+  });
+}
+
+function fmtHours(h) {
+  const r = Math.round(h * 10) / 10;
+  return Number.isInteger(r) ? `${r}h` : `${r.toFixed(1)}h`;
+}
+
+function renderTz(tz) {
+  const el = $('tzBadge');
+  if (!tz || tz.server_offset == null) {
+    el.innerHTML = ICONS.globe + '<span>Broker server time · local offset unavailable</span>';
+    return;
+  }
+  const diff = (tz.local_offset != null ? tz.local_offset : 0) - tz.server_offset;
+  const phrase = Math.abs(diff) < 0.01 ? 'same as you' : diff > 0
+    ? `server is ${fmtHours(diff)} behind you`
+    : `server is ${fmtHours(-diff)} ahead of you`;
+  el.innerHTML = ICONS.globe + `<span>Broker ${esc(tz.server_label)} · you ${esc(tz.local_label)} · ${esc(phrase)}</span>`;
+}
+
+function renderWindow(strongId, metaId, w) {
+  if (!w) {
+    $(strongId).textContent = '—';
+    $(metaId).textContent = 'Not enough trades in this period.';
+    return;
+  }
+  $(strongId).textContent = w.server;
+  const local = w.local ? ` · ${esc(w.local)} your time` : '';
+  $(metaId).innerHTML = `<b class="${w.net >= 0 ? 'pos' : 'neg'}">${signed(w.net)}</b> over ${f(w.trades)} trades · ${f(w.win)}% win${local}`;
+}
+
+function renderCoach(d) {
+  const c = d.coach || {};
+  $('coachSummary').textContent = c.summary ||
+    (d.insights && d.insights[0]) ||
+    'Not enough activity in this period to draw firm conclusions.';
+  renderTz(d.tz || {});
+  renderWindow('bestWindow', 'bestWindowMeta', c.best_window);
+  renderWindow('worstWindow', 'worstWindowMeta', c.worst_window);
+  fillList('avoidList', c.avoid);
+  fillList('mistakeList', c.mistakes);
+  fillList('edgeList', c.edge);
+}
+
+function renderInsights(d) {
+  const list = d.insights || [];
+  const wrap = $('insightsList');
+  wrap.replaceChildren();
+  if (!list.length) {
+    const li = document.createElement('li');
+    li.textContent = 'Try a longer period, such as one year, to surface patterns.';
+    wrap.append(li);
+    return;
+  }
+  list.forEach((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    wrap.append(li);
+  });
+}
+
+function renderSide(rows) {
+  const wrap = $('side');
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="dir-meta"><span>No closed trades.</span></div>';
+    return;
+  }
+  wrap.innerHTML = rows.map((r) => {
+    const long = r.k === 'Long';
+    const win = clampPct(r.win);
+    return `<div class="dir-row">
+      <div class="dir-line">
+        <span class="side-pill ${long ? 'long' : 'short'}">${long ? ICONS.arrowUp : ICONS.arrowDown}${esc(r.k)}</span>
+        <span class="dir-win ${long ? 'pos' : 'neg'}">${f(r.win)}%</span>
+      </div>
+      <span class="dir-bar"><i class="${long ? '' : 'short'}" style="width:${win}%"></i></span>
+      <div class="dir-meta"><span>${f(r.trades)} trades</span><span>net <b class="${tone(r.net)}">${signed(r.net)}</b></span></div>
+    </div>`;
+  }).join('');
+}
+
+function dateCell(value) {
+  const parts = String(value || '').split(' ');
+  return `<td><span class="date-main">${esc(parts[0] || '')}</span><span class="date-sub">${esc(parts.slice(1).join(' ') || '')}</span></td>`;
+}
+
+function renderTable(rows) {
+  $('tableCount').textContent = `${rows.length} of ${currentTable.length}`;
+  if (!rows.length) {
+    $('tbody').innerHTML = '<tr><td colspan="7" class="no-rows">No trades match that filter.</td></tr>';
+    return;
+  }
+  $('tbody').innerHTML = rows.map((r) => {
+    const long = r.side === 'Long';
+    const sym = String(r.symbol || '');
+    return `<tr>
+      ${dateCell(r.open)}
+      ${dateCell(r.close)}
+      <td><span class="sym"><span class="sym-mark">${esc(sym.slice(0, 2).toUpperCase())}</span>${esc(sym)}${r.overtrade ? `<span class="overtrader-badge" title="${Number(r.setup_trades || 3)} same-symbol ${long ? 'bullish' : 'bearish'} trades on ${esc(String(r.close || '').slice(0, 10))}">${ICONS.alert}Overtrader</span>` : ''}</span></td>
+      <td><span class="side-pill ${long ? 'long' : 'short'}">${long ? ICONS.arrowUp : ICONS.arrowDown}${esc(r.side)}</span></td>
+      <td class="num">${f(r.volume)}</td>
+      <td class="num">${f(r.hold)}</td>
+      <td class="num"><span class="net-pill ${tone(r.net)}">${signed(r.net)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function destroyCharts() {
+  Object.keys(charts).forEach((id) => {
+    try { charts[id].destroy(); } catch (err) { /* ignore */ }
+    delete charts[id];
+  });
+}
+
+function makeChart(id, type, labels, data, opts) {
+  opts = opts || {};
+  const el = $(id);
+  if (!el) return;
+  if (charts[id]) {
+    try { charts[id].destroy(); } catch (err) { /* ignore */ }
+    delete charts[id];
+  }
+
+  const muted = cvar('--muted');
+  const grid = cvar('--chart-grid');
+  const up = cvar('--up');
+  const down = cvar('--down');
+  const accent = opts.color || cvar('--primary');
+  const ctx = el.getContext('2d');
+
+  let stroke = accent;
+  let fill = null;
+  if (type === 'line') {
+    const g = ctx.createLinearGradient(0, 0, 0, el.parentElement.clientHeight || 240);
+    g.addColorStop(0, rgba(accent, 0.24));
+    g.addColorStop(1, rgba(accent, 0));
+    fill = g;
+    if (opts.gradient) {
+      const h = ctx.createLinearGradient(0, 0, el.parentElement.clientWidth || 400, 0);
+      h.addColorStop(0, cvar('--primary'));
+      h.addColorStop(1, cvar('--primary-2'));
+      stroke = h;
+    }
+  }
+
+  const dataset = type === 'line'
+    ? {
+        data, borderColor: stroke, backgroundColor: fill, fill: true, borderWidth: 2.2, tension: 0.35,
+        pointRadius: 0, pointHoverRadius: 3, pointHoverBorderWidth: 2,
+        pointHoverBackgroundColor: accent, pointHoverBorderColor: cvar('--panel-solid')
+      }
+    : {
+        data,
+        backgroundColor: data.map((v) => rgba(v >= 0 ? up : down, 0.72)),
+        hoverBackgroundColor: data.map((v) => rgba(v >= 0 ? up : down, 1)),
+        borderRadius: 6, borderSkipped: false, maxBarThickness: 30
+      };
+
+  charts[id] = new Chart(el, {
+    type,
+    data: { labels, datasets: [dataset] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 650, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cvar('--panel-solid'),
+          titleColor: cvar('--text'),
+          bodyColor: cvar('--muted'),
+          borderColor: cvar('--border-strong'),
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 10,
+          displayColors: false,
+          titleFont: { family: "'Poppins', sans-serif", size: 10, weight: '600' },
+          bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+          callbacks: { label: (c) => signed(c.parsed.y) }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: muted, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 9.5 } }
+        },
+        y: {
+          beginAtZero: type === 'bar',
+          grace: '8%',
+          grid: { color: grid, drawTicks: false },
+          border: { display: false },
+          ticks: { color: muted, padding: 8, font: { size: 9.5 }, callback: (v) => cf.format(v) }
+        }
+      }
+    }
+  });
+}
+
+function makeSpark(id, labels, data) {
+  const el = $(id);
+  if (!el) return;
+  if (charts[id]) {
+    try { charts[id].destroy(); } catch (err) { /* ignore */ }
+    delete charts[id];
+  }
+  const ctx = el.getContext('2d');
+  const primary = cvar('--primary');
+  const h = ctx.createLinearGradient(0, 0, 0, el.parentElement.clientHeight || 92);
+  h.addColorStop(0, rgba(primary, 0.3));
+  h.addColorStop(1, rgba(primary, 0));
+  const stroke = ctx.createLinearGradient(0, 0, el.parentElement.clientWidth || 320, 0);
+  stroke.addColorStop(0, primary);
+  stroke.addColorStop(1, cvar('--primary-2'));
+
+  charts[id] = new Chart(el, {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: stroke, backgroundColor: h, fill: true, borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
+}
+
+function renderCharts(d) {
+  destroyCharts();
+  if (typeof Chart === 'undefined') return;
+  Chart.defaults.font.family = "'Poppins', system-ui, sans-serif";
+  Chart.defaults.font.size = 10;
+
+  makeChart('eq', 'line', d.equity.x, d.equity.y, { gradient: true });
+  makeChart('dd', 'line', d.equity.x, d.equity.dd, { color: cvar('--down') });
+  makeChart('day', 'bar', d.daily.x, d.daily.y);
+  makeChart('sym', 'bar', d.by_symbol.map((r) => r.k), d.by_symbol.map((r) => r.net));
+  makeChart('dow', 'bar', d.by_dow.map((r) => (DOW[r.k] != null ? DOW[r.k] : r.k)), d.by_dow.map((r) => r.net));
+  makeChart('hr', 'bar', d.by_hour.map((r) => `${r.k}:00`), d.by_hour.map((r) => r.net));
+  makeSpark('heroSpark', d.equity.x, d.equity.y);
+}
+
+const navSections = ['overview', 'performance', 'coach', 'trades'].map((id) => $(id)).filter(Boolean);
+function syncNav() {
+  if ($('dashboard').hidden) return;
+  const y = window.scrollY + 150;
+  let active = 'overview';
+  navSections.forEach((section) => {
+    if (section.getBoundingClientRect().top + window.scrollY <= y) active = section.id;
+  });
+  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('is-active', a.dataset.nav === active));
+}
+window.addEventListener('scroll', syncNav, { passive: true });
+window.addEventListener('resize', syncNav);
+
+initConnection();
+
+</script>
+</body>
+</html>
+
+
